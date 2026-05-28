@@ -16,10 +16,10 @@ def extract_rho_series(run_md_path: str):
 
     section = re.search(r"###\s*3\.3.*?```(.*?)```", text, flags=re.S)
     if not section:
-        raise ValueError("未在 run.md 中找到 '3.3 实际训练观察到的 ρ 轨迹' 代码块。")
+        raise ValueError("未在 run.md 中找到 3.3 小节下的代码块。")
 
     block = section.group(1)
-    values = [float(x) for x in re.findall(r"\b\d+(?:\.\d+)?\b", block)]
+    values = [float(x) for x in re.findall(r"(?<!\d)(?:0(?:\.\d+)?|1(?:\.0+)?)(?!\d)", block)]
     if not values:
         raise ValueError("未在 ρ 轨迹代码块中解析到数值。")
     return values
@@ -35,7 +35,10 @@ def plot_rho(values, out_path: str, title: str, max_xticks: int):
     plt.grid(True, alpha=0.3)
     step = 1 if len(epochs) <= max_xticks else max(1, len(epochs) // max_xticks)
     plt.xticks(epochs[::step])
-    plt.ylim(min(values) - 0.005, max(values) + 0.005)
+    vmin, vmax = min(values), max(values)
+    vrange = max(vmax - vmin, 1e-6)
+    pad = max(0.005, vrange * 0.05)
+    plt.ylim(vmin - pad, vmax + pad)
     plt.tight_layout()
 
     os.makedirs(os.path.dirname(out_path) or '.', exist_ok=True)
